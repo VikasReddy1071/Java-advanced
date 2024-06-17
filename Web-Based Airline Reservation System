@@ -1,0 +1,98 @@
+@Entity
+public class Flight {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String flightNumber;
+    private String departureCity;
+    private String arrivalCity;
+    private LocalDateTime departureTime;
+    private LocalDateTime arrivalTime;
+    private int totalSeats;
+    private int availableSeats;
+    // Getters and setters
+}
+public interface FlightRepository extends JpaRepository<Flight, Long> {
+    List<Flight> findByDepartureCityAndArrivalCityAndDepartureTimeAfter(String departureCity, String arrivalCity, LocalDateTime departureTime);
+    // Other custom queries
+}
+@Entity
+public class Booking {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String bookingNumber;
+    @ManyToOne
+    private Flight flight;
+    @ManyToOne
+    private User user;
+    // Other details like seat number, passenger details
+    // Getters and setters
+}
+@Service
+public class BookingService {
+    @Autowired
+    private BookingRepository bookingRepository;
+
+    public void bookFlight(Booking booking) {
+        // Logic to book flight, update seats availability, generate booking number, etc.
+        bookingRepository.save(booking);
+    }
+
+    public List<Booking> getUserBookings(User user) {
+        // Return bookings for a specific user
+        return bookingRepository.findByUser(user);
+    }
+    // Other methods for managing bookings
+}
+@Controller
+@RequestMapping("/admin")
+public class AdminController {
+    @Autowired
+    private FlightService flightService;
+
+    @GetMapping("/flights")
+    public String viewFlights(Model model) {
+        List<Flight> flights = flightService.getAllFlights();
+        model.addAttribute("flights", flights);
+        return "admin/flights";
+    }
+
+    @PostMapping("/flights/add")
+    public String addFlight(@ModelAttribute Flight flight) {
+        flightService.addFlight(flight);
+        return "redirect:/admin/flights";
+    }
+
+    // Other admin functionalities like flight removal, user management, etc.
+}
+<form action="/search" method="get">
+    <input type="text" name="departureCity" placeholder="Departure City" required>
+    <input type="text" name="arrivalCity" placeholder="Arrival City" required>
+    <input type="date" name="departureDate" required>
+    <button type="submit">Search Flights</button>
+</form>
+<table>
+    <thead>
+        <tr>
+            <th>Flight Number</th>
+            <th>Departure City</th>
+            <th>Arrival City</th>
+            <th>Departure Time</th>
+            <th>Arrival Time</th>
+            <th>Available Seats</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr th:each="flight : ${flights}">
+            <td th:text="${flight.flightNumber}"></td>
+            <td th:text="${flight.departureCity}"></td>
+            <td th:text="${flight.arrivalCity}"></td>
+            <td th:text="${flight.departureTime}"></td>
+            <td th:text="${flight.arrivalTime}"></td>
+            <td th:text="${flight.availableSeats}"></td>
+            <td><a th:href="@{/book/{id}(id=${flight.id})}">Book</a></td>
+        </tr>
+    </tbody>
+</table>
